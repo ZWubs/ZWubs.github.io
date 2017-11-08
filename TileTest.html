@@ -1,0 +1,694 @@
+<html>
+    
+    <head>
+
+        <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+        
+        <title>De-Singe</title>
+        
+        <style>
+
+            @font-face {
+                font-family: 'Material';
+                src: url(Material.ttf);
+            }
+
+            @font-face {
+                font-family: 'ProductSans';
+                src: url(ProductSans.ttf);
+            }
+            
+            @font-face {
+                font-family: 'Source Sans Pro';
+                src: url(SourceSansPro.ttf);
+            }
+            
+            body {
+                
+                height: 100%;
+                
+                margin: 0;
+                /*
+                overflow: hidden;
+                */
+                background-color #eee
+                
+                display: flex;
+                flex-direction: column;
+                
+            }
+            
+            
+            
+            #navbar {
+                
+                z-index: 2;
+                
+                flex: 0 1 40px;
+                
+                margin: 0;
+                padding: 0;
+                
+                width: 100%;
+                height: 40px;
+                
+                background-color: #222;
+                
+                color: #DDD;
+                
+                list-style-type: none;
+                
+                user-select: none;
+                
+            }
+            
+            #navbar > * { float: left; }
+            
+            #navbar #logo {
+                
+                padding: 0 20px;
+                
+                display: inline-block;
+                
+                height: 40px;
+                width: 40px;
+                
+                cursor: pointer;
+                
+                transition: all .3s linear;
+                
+            }
+            
+            #navbar #logo img {
+                
+                filter: grayscale(100%) brightness(400%);
+                
+                transition: all .3s linear;
+                
+            }
+
+            #navbar #logo:hover {
+
+                background-color: #eee;
+
+            }
+
+            #navbar #logo:hover img {
+
+                filter: grayscale(100%) brightness(-400%);
+
+            }
+            
+            #navbar #menu {
+                
+                height: 40px;
+
+                font-family: "Source Sans Pro";
+                font-size: 18px;
+                
+            }
+
+            .item {
+
+                position: relative;
+                display: inline-block;
+
+            }
+            
+            .item .title {
+
+                padding: 0 10px;
+                
+                line-height: 40px;
+
+                cursor: pointer;
+
+                transition: all .2s linear;
+
+            }
+
+            .item:hover .title {
+
+                background-color: #444;
+
+            }
+
+            .item .drop {
+
+                visibility: hidden;
+                opacity: 0;
+
+                position: absolute;
+                left: 0;
+
+                background-color: #2e2e2e;
+
+                min-width: 160px;
+
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+
+                z-index: 2;
+
+                transition: opacity .3s linear;
+
+            }
+
+            .drop a {
+
+                color: #ddd;
+
+                padding: 10px 10px;
+
+                text-decoration: none;
+
+                display: block;
+
+                transition: all .2s linear;
+
+            }
+
+            .drop a:hover {
+
+                background-color: #eee;
+                color: #000;
+
+            }
+
+            .item:hover .drop {
+
+                opacity: 1;
+                visibility: visible;
+
+            }
+
+            
+            
+            
+            
+            #window {
+                
+                height: calc(100% - 40px);
+                width: 100%;
+                
+                display: flex;
+                
+                background-color: #eee;
+
+                overflow: hidden;
+                
+            }
+            
+            #editor {
+                
+                flex: 1 1 auto;
+                
+                height: 100%;
+                width: auto;
+                
+                position: relative;
+                
+            }
+            
+            #editor #GUI, #CanCon {
+            	
+            	width: 100%;
+            	height: 100%;
+            	
+				position: absolute;
+            	
+            }
+            
+            #CanCon {
+            	
+            	overflow: scroll;
+            	
+            }
+            
+            #holder {
+            	
+            	position: absolute;
+                
+                margin: auto;
+                left: 0;
+                right: 0;
+                top: 0;
+                bottom: 0;
+            	
+            }
+            
+            #editor #canvas, #grid, #buffer {
+                
+                width: 100%;
+                height: 100%;
+                
+                position: absolute;
+                
+                z-index: 0;
+                
+            }
+            
+            #buffer { margin:50px; }
+            
+            #editor #canvas {
+            	
+            	image-rendering: pixelated;
+            	image-rendering: optimizeQuality;
+				image-rendering: optimizeSpeed;
+				image-rendering: -moz-crisp-edges;
+                
+                background-color: #fff;
+                
+                box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+            	
+                user-select: none;
+
+            }
+            
+            #editor #pos {
+                
+                user-select: none;
+                
+                position: absolute;
+                
+                margin-right: 5px;
+
+                text-align: right;
+                
+                top: 0;
+                right: 0;
+                
+                font-size: 16px;
+                font-family: "Source Sans Pro";
+                
+                color: rgba(0,0,0,.75);
+                
+                cursor: default;
+                
+                transition: all .2s linear;
+                
+                z-index: 1;
+                
+            }
+
+            #editor #zoom {
+
+                position: absolute;
+
+                right: 0;
+                bottom: 0;
+
+                height: 30px;
+                width: 120px;
+
+                background-color: rgba(0,0,0,0.8);
+                
+                z-index: 1;
+
+            }
+
+            #editor #zoom div {
+
+                float: left;
+
+                font-family: "Source Sans Pro";
+
+                color: #eee;
+
+                text-align: center;
+                line-height: 30px;
+
+                height: 30px;
+
+                transition: all .3s linear;
+                
+                user-select: none;
+
+            }
+
+            #editor #zoom #in, #out {
+
+                width: 30px;
+
+                font-size: 20px;
+
+                cursor: pointer;
+
+            }
+
+            #editor #zoom #in:hover, #out:hover { background-color: rgba(255,255,255,.1); }
+
+            #editor #zoom #zoomlvl {
+
+                width: 60px;
+
+                font-size: 16px;
+
+            }
+
+            #options {
+                
+                background-color: #2d2d2d;
+                
+                height: 100%;
+                
+                flex: 0 1 300px;
+                
+                z-index: 1;
+                
+                color: #ddd;
+                
+            }
+            
+            .sub {
+            	
+            	font: 12px "Source Sans Pro";
+            	
+            	float: right;
+            	
+            }
+
+            .hint {
+
+                color: #888;
+
+            }
+            
+        </style>
+        
+    </head>
+    
+    <body>
+
+        <div id="navbar">
+            
+            <div id="logo"><img src="Logo.png" height="40px" width:"40px" /></div>
+            
+            <div id="menu">
+                
+                <div class="item">
+
+                    <div class="title">File</div>
+              
+                    <div class="drop">
+                        
+                        <a href="#">New<div class="sub hint">ctrl + n</div></a>
+                        <a href="#">Open<div class="sub hint">ctrl + o</div></a>
+                        <a href="#">Save<div class="sub hint">ctrl + s</div></a>
+                        <a href="#">Preferences<div class="sub hint">ctrl + p</div></a>
+                    
+                    </div>
+
+                </div>
+
+                <div class="item">
+
+                    <div class="title">Edit</div>
+              
+                    <div class="drop">
+                        
+                        <a href="#">Undo<div class="sub hint">ctrl + z</div></a>
+                        <a href="#">Redo<div class="sub hint">ctrl + y</div></a>
+                        <a href="#">Copy<div class="sub hint">ctrl + c</div></a>
+                        <a href="#">Cut<div class="sub hint">ctrl + x</div></a>
+                        <a href="#">Paste<div class="sub hint">ctrl + v</div></a>
+                    
+                    </div>
+
+                </div>
+
+                <div class="item">
+
+                    <div class="title">View</div>
+              
+                    <div class="drop">
+                        
+                        <a href="#" onclick="Zoom.change(1)">Zoom In</a>
+                        <a href="#" onclick="Zoom.change(-1)">Zoom Out</a>
+                        <a href="#" onclick="Grid.state(this)">Grid<div class="sub">ON</div></a>
+                    
+                    </div>
+
+                </div>
+                
+                <div class="item">
+
+                    <div class="title">Map</div>
+              
+                    <div class="drop">
+                        
+                        <a href="#">New</a>
+                    
+                    </div>
+
+                </div>
+                
+                <div class="item">
+
+                    <div class="title">Layer</div>
+              
+                    <div class="drop">
+                        
+                        <a href="#">New</a>
+                    
+                    </div>
+
+                </div>
+                
+                <div class="item">
+
+                    <div class="title">Tileset</div>
+              
+                    <div class="drop">
+                        
+                        <a href="#">New</a>
+                        <a href="#">Properties</a>
+                    
+                    </div>
+
+                </div>
+                
+                <div class="item">
+
+                    <div class="title">Help</div>
+              
+                    <div class="drop">
+                        
+                        <a href="#">About</a>
+                        <a href="#">Documentation</a>
+                        <a href="#">Tutorial</a>
+                        <a href="#">Donate</a>
+                    
+                    </div>
+
+                </div>
+
+            </div>
+            
+        </div>
+        
+        <div id="window">
+            
+            <div id="editor" onmousemove="Pos(event)">
+            	
+            	<div id="GUI">
+                
+	                <div id="pos"></div>
+	
+	                <div id="zoom">
+	                    
+	                    <div id="in" onclick="Zoom.change(-1)">-</div>
+	
+	                    <div id="zoomlvl">100</div>
+	
+	                    <div id="out" onclick="Zoom.change(1)">+</div>
+	
+	                </div>
+	                
+				</div>
+                
+                <div id="CanCon">
+                	
+                	<div id="holder" style="height:0px;width:0px;">
+	                    
+		                <canvas id="canvas" onclick="Tilemap.draw()">Your Browser Doesn't Support Canvas</canvas>
+		                
+		            	<div id="grid">
+							<svg width="100%" height="100%">
+								<defs>
+									<pattern id="pattern" width="16" height="16" patternUnits="userSpaceOnUse">
+										<path d="M 16 0 L 16 16 0 16" fill="none" stroke="gray" stroke-width="1"/>
+									</pattern>
+								</defs>
+								<rect width="100%" height="100%" fill="url(#pattern)" />
+							</svg>
+						</div>
+						
+						<div id="buffer"></div>
+					
+					</div>
+				
+				</div>
+			
+			</div>
+
+            <div id="options">
+            	
+            	<input type="file" onchange="Tileset.upload(event)"/>
+            	
+            </div>
+            
+        </div>
+        
+    </body>
+    
+</html>
+
+
+<script>
+
+	var Tilemap = {
+
+        name: "Untitled",
+        ts: [0,0],
+        dim: [0,0],
+        layers: [],
+        tilesets: [],
+        zoom: 1,
+        background: "#FFFFFF",
+        
+        ctx: document.getElementById("canvas").getContext("2d"),
+        
+
+        new: function(name,ts,dim,background) {
+			
+            this.name = name;
+    		this.ts = ts;
+    		this.dim = dim;
+    		this.background = background;
+    		
+    		this.ctx.canvas.width = dim[0]*ts[0];
+    		this.ctx.canvas.height = dim[1]*ts[1];
+
+        },
+
+        draw: function() {
+
+           
+            
+        }
+	}
+
+    Tilemap.new("Tilemap",[16,16],[50,25],"#FFFFFF");
+    
+    var Grid = {
+    	
+    	val: 1,
+    	element: document.getElementById("grid"),
+        pattern: document.getElementById("pattern"),
+    	
+    	update: function() {
+
+            var i = Tilemap.ts[0]*Tilemap.zoom;
+
+            this.pattern.setAttribute("height",i);
+            this.pattern.setAttribute("width",i);
+            
+            document.getElementById("holder").style.width = Tilemap.dim[0]*Tilemap.ts[0]*Tilemap.zoom;
+            document.getElementById("holder").style.height = Tilemap.dim[1]*Tilemap.ts[1]*Tilemap.zoom;
+
+            this.pattern.childNodes[1].setAttribute("d","M " + i + " 0 L " + i + " " + i + " 0 " + i + "");
+    		
+    	},
+    	
+    	state: function(i) {
+    		
+    		if (!this.val) {this.val = 1; this.element.style.opacity = "1";i.childNodes[1].innerHTML = "ON" }
+    		else {this.val = 0; this.element.style.opacity = "0";i.childNodes[1].innerHTML = "OFF"}
+    		
+    	},
+    }
+    
+    Grid.update();
+    
+    var Zoom = {
+
+        lvl: 100,
+        list: [12.5,25,50,100,200,400,800,1600,3200,6400],
+
+        change: function(a) {
+
+            var b = this.list.indexOf(Tilemap.zoom*100) + a;
+
+            if (b < 0) {b = 0}
+            else if (b > this.list.length) {b = this.list.length}
+
+            Tilemap.zoom = this.list[b]/100;
+
+            document.getElementById("zoomlvl").innerHTML = this.list[b];
+            
+            Grid.update();
+
+        }
+    }
+    
+    function Pos(e) {
+        
+        var A = Tilemap.ctx.canvas.getBoundingClientRect();
+        var B = document.getElementById("pos")
+        
+		B.innerHTML = "(" + Math.floor((e.clientX - A.left)/Tilemap.ts[0]/Tilemap.zoom) + "," + Math.floor((e.clientY - A.top)/Tilemap.ts[1]/Tilemap.zoom) + ")";
+		
+		if ((e.clientX - A.left) < 0 || (e.clientX - A.left) > A.width || (e.clientY - A.top) < 0 || (e.clientY - A.top) > A.height) { B.setAttribute('style', 'color: rgba(0,0,0,.3);') }
+		
+		else { B.setAttribute('style', 'color: rgba(0,0,0,.7);') }
+        
+    }
+    
+    var Tileset = {
+    	
+    	val: [0,0],
+    	ts: [0,0],
+    	img: new Image(),
+    	ctx: document.createElement("canvas").getContext("2d"),
+    	
+    	new: function(e) {
+    		
+    		this.img.src = e.target.result;
+    		
+    		this.img.onload = function(){
+    		
+	    		Tileset.ctx.canvas.height = this.height;
+	    		Tileset.ctx.canvas.width = this.width;
+	    		
+	    		Tilemap.ctx.drawImage(this,0,0);
+	    		
+    		}
+    	},
+    	
+    	upload: function(e) {
+    		
+    		var reader = new FileReader();
+    		
+		    reader.onload = function(event){
+
+		        Tileset.new(event);
+		        
+		    }
+		    
+		    reader.readAsDataURL(e.target.files[0]);
+
+    	},
+    }
+    
+    function Main() {
+    
+    	//document.getElementById("CanCon").scrollLeft = 0;
+    	//document.getElementById("CanCon").scrollTop = 0;
+    	
+    	requestAnimationFrame(Main);
+    
+    }
+    
+    requestAnimationFrame(Main);
+    
+</script>
