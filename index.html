@@ -1,14 +1,16 @@
 <html>
     
     <head>
-	    
-	<title>ZWubs - Weather</title>
         
         <link href="https://fonts.googleapis.com/css?family=Arimo" rel="stylesheet">
+        
+        <link rel="shortcut icon" type="image/png" href="Icon.png"/>
         
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" charset="utf-8"></script>
 
         <script src="jquery.simpleWeather.js" charset="utf-8"></script>
+        
+        <title>ZWubs | Weather</title>
         
         <style>
             
@@ -176,6 +178,35 @@
                 
             }
             
+            #spinner {
+                
+                position: absolute;
+                
+                left:0;right:0;
+                margin:auto;
+                top:33%;
+            	
+				width: 40px;
+				height: 40px;
+				background-color: #ddd;
+
+				z-index: 2;
+
+				border-radius: 100%;
+				-webkit-animation: sk-scaleout 1.0s infinite ease-in-out;
+				animation: sk-scaleout 1.0s infinite ease-in-out;
+			}
+
+			@-webkit-keyframes sk-scaleout {
+				0% { -webkit-transform: scale(0) }
+				100% {-webkit-transform: scale(1.0);opacity: 0;}
+			}
+
+			@keyframes sk-scaleout {
+				0% {-webkit-transform: scale(0);transform: scale(0);} 
+				100% {-webkit-transform: scale(1.0);transform: scale(1.0);opacity: 0;}
+			}
+            
         </style>
         
     </head>
@@ -183,8 +214,8 @@
     <body>
         
         <div class="widget" id="weather">
-            
-            <div class="spinner"></div>
+        	
+        	<div id="spinner"></div>
             
             <div id="img"></div>
             
@@ -232,6 +263,8 @@
 	            
 	            console.log(weather);
 	            
+	            $("#spinner").fadeOut(400, function () {});
+	            
 	            $("#temp").fadeOut(400, function () {
 	                $(this).html(weather.temp).fadeIn(400);
 	            });
@@ -254,6 +287,4 @@
         	error: function(error) { console.log(error)}
 		});
     }
-
-    
 </script>
