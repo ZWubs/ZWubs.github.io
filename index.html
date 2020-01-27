@@ -1,108 +1,958 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html>
 
-	<head>
+    <head>
 
-		<meta charset="utf-8">
+        <!-- Header Data -->
+        <meta charset="UTF-8">
 
-		<title>Separating Axis Theorem</title>
+        <title>Creative Project</title>
 
-		<style>
+        <!-- Fonts -->
+        <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
 
-			body {
+        <!-- Main CSS -->
+        <style>
 
-				margin: 0;
+            body {
 
-				overflow: hidden;
+                margin: 0;
 
+                width: 100%;
+                height: 100%;
+
+                font-family: "Roboto";
+
+            }
+
+            #overlay {
+
+                position: absolute;
+
+                width: 100%;
+                height: 100%;
+
+                pointer-events: none;
+
+            }
+
+            #overlay * { pointer-events: auto; }
+
+            #tools {
+
+                position: absolute;
+
+                right: 0;
+                top: 0;
+
+            }
+
+            #tools .item {
+
+                position: relative;
+
+                width: 40px;
+                height: 40px;
+
+                padding: 5px;
+                margin: 10px 5px;
+
+                border: 3px white solid;
+                border-radius: 10px;
+
+                background-color: rgba( 0, 0, 0, 0.5 );
+
+                cursor: pointer;
+
+                transition: background-color 0.25s linear;
+
+            };
+
+            #tools .item .bg-image {
+
+                width: 100%;
+                height: 100%;
+
+            }
+
+            #tools .item:hover {
+
+                background-color: rgba( 255, 255, 255, 0.25 );
+
+            }
+
+            #tools .item .label {
+
+                position: absolute;
+
+                right: 100%;
+
+                min-width: 100px;
+                height: 40px;
+
+                padding: 0px 5px;
+                margin: 0px 5px;
+
+                color: #FFF;
+                font-size: 18px;
+                text-align: right;
+                line-height: 40px;
+
+                background-color: rgba( 0, 0, 0, 0.5 );
+                opacity: 0.0;
+
+                cursor: pointer;
+                pointer-events: none;
+
+                transition: opacity 0.5s linear;
+
+            }
+
+            #tools .item:hover .label {
+
+                opacity: 1.0;
+
+            }
+
+            #gimbal {
+
+                position: absolute;
+
+                right: 0;
+                bottom: 0;
+
+                width: 120px;
+                height: 120px;
+
+                /* background-color: #EEE; */
+
+            }
+
+            #input-tools {
+
+                position: absolute;
+
+                left: 0;
+                bottom: 0;
+
+                margin: 20px;
+
+            }
+
+            #input-tools form {
+
+                margin: 0;
+
+            }
+
+            #input-tools #time-input {
+
+                height: 32px;
+                width: 100px;
+
+                padding: 5px;
+
+                border: 1px white solid;
+                border-radius: 5px;
+
+                color: #FFF;
+                font-size: 18px;
+                text-align: center;
+
+                background: rgba( 0, 0, 0, 0.5 );
+
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div id="overlay">
+
+            <div id="tools">
+
+                <div class="item" id="constellation-tool" onclick="APP.ToggleConstellations()">
+
+                    <div class="label">Constellations</div>
+
+                    <image class="bg-image" src="./img/Constellation.svg" />
+
+                </div>
+
+                <div class="item" id="atmosphere-tool" onclick="APP.ToggleAtmosphere()">
+
+                    <div class="label">Atmosphere</div>
+
+                    <image class="bg-image" src="./img/Atmosphere.svg" />
+
+                </div>
+
+                <div class="item" id="color-tool" onclick="APP.ToggleStarColor()">
+
+                    <div class="label">Star Color</div>
+
+                    <image class="bg-image" src="./img/Colo.svg" />
+
+                </div>
+
+                <div class="item" id="sun-tool" onclick="APP.ToggleSun()">
+
+                    <div class="label">Sun</div>
+
+                    <image class="bg-image" src="./img/Sun.svg" />
+
+                </div>
+
+            </div>
+
+            <div id="input-tools">
+
+                <form action="#" onsubmit="APP.UpdateTime( this )">
+
+                    <input class="item" id="time-input" placeholder="0" value="0"></input>
+
+                </form>
+
+                <!-- <div class="item" id="play-pause-button"></div> -->
+
+            </div>
+
+        </div>
+
+
+        <canvas id="APP-Canvas"></canvas>
+
+        <!-- Javascript Scripts -->
+        <script src="./js/three.js"></script>
+
+        <script src="./js/TrackballControls.js"></script>
+
+        <script src="./js/EffectComposer.js"></script>
+        <script src="./js/RenderPass.js"></script>
+
+        <script src="./js/LuminosityHighPassShader.js"></script>
+        <script src="./js/CopyShader.js"></script>
+        <script src="./js/ShaderPass.js"></script>
+        <script src="./js/UnrealBloomPass.js"></script>
+
+        <!-- Shaders -->
+        <script type="x-shader/x-vertex" id="vertexshader">
+
+            uniform bool atmosphere;
+            uniform bool colorStars;
+
+            attribute float magnitude;
+            attribute vec3 color;
+
+            varying vec3 outputColor;
+            varying float erase;
+
+			void main() {
+
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+
+				gl_PointSize = (-magnitude + 5.0) * 4.0 + 1.0;
+
+				gl_Position = projectionMatrix * mvPosition;
+
+                outputColor = vec3( 1.0, 1.0, 1.0 );
+                if( colorStars ) {
+                    outputColor = color;
+                }
+                erase = 1.0;
+                if( atmosphere || magnitude > 50.0 ) {
+                    if ( magnitude > 5.0 ) erase = 0.0;
+                }
 			}
-
-		</style>
-
-	</head>
-
-	<body>
-
-		<canvas id="canvas"></canvas>
-
-		<script src="SAT.js"></script>
-
-		<script>
-
-			var canvas = document.getElementById("canvas");
-			var ctx = canvas.getContext("2d");
-			var width = canvas.width = window.innerWidth;
-			var height = canvas.height = window.innerHeight;
-
-
-			var V = SAT.Vector;
-			var P = SAT.Polygon;
-
-			P.prototype.collidesWith = function(polygon, response){
-			    return SAT.testPolygonPolygon(this, polygon, response);
-			};
-
-			P.prototype.draw = function (ctx) {
-			    var points = this.calcPoints;
-			    var i = points.length;
-
-			    ctx.save();
-			    ctx.translate(this.pos.x, this.pos.y);
-			    ctx.beginPath();
-			    ctx.moveTo(points[0].x, points[0].y);
-			    while (i--) ctx.lineTo(points[i].x, points[i].y);
-			    ctx.closePath();
-			    ctx.fill();
-			    ctx.restore();
-
-			};
-
-
-			var pointer = new P(new V(0, 0), [
-			    new V(0, 0),
-			    new V(30, 0),
-			    new V(0, 30)
-			]);
-
-			var polygon = new P(new V(100, 100), [
-			    new V(25,25),
-			  	new V(25,-25),
-			  	new V(-25,-25),
-			  	new V(-25,25)
-			]);
-
-
-			var response = new SAT.Response();
-			document.onmousemove = function (e) {
-			    pointer.pos.x = e.pageX;
-			    pointer.pos.y = e.pageY;
-
-			};
-
-			(function draw() {
-			    ctx.clearRect(0, 0, width, height);
-
-			    ctx.fillStyle = "red";
-			    pointer.draw(ctx);
-
-			    ctx.fillStyle = "black";
-			    polygon.draw(ctx);
-
-				polygon.setAngle(polygon.angle + 0.01);
-
-				response.clear();
-			    var collided = polygon.collidesWith(pointer,response);
-			    if (collided) {
-			        polygon.pos.x -= response.overlapV.x;
-			        polygon.pos.y -= response.overlapV.y;
-			    }
-
-				requestAnimationFrame( draw );
-
-			})();
 
 		</script>
 
-	</body>
+		<script type="x-shader/x-fragment" id="fragmentshader">
+
+            varying vec3 outputColor;
+            varying float erase;
+
+			void main() {
+
+
+                if ( length( gl_PointCoord - vec2( 0.5, 0.5 ) ) > 0.475 ) discard;
+
+				gl_FragColor = vec4( outputColor, erase );
+
+			}
+
+		</script>
+
+        <!-- Custom Javascript -->
+
+        <script>
+
+            var APP = {};
+
+            // Canvas Setup
+            APP.Canvas = document.getElementById("APP-Canvas");
+            APP.Aspect = window.innerWidth / window.innerHeight;
+
+            // Renderer Setup
+            APP.Renderer = new THREE.WebGLRenderer({ canvas: APP.Canvas });
+            APP.Renderer.setPixelRatio( window.devicePixelRatio );
+            APP.Renderer.setSize( window.innerWidth, window.innerHeight );
+
+            // Scene Setup
+            APP.Scene = new THREE.Scene();
+            APP.Scene.background = new THREE.Color( 0x000000 );
+            APP.Scene.add( new THREE.AmbientLight( 0xFFFFFF, 1 ) );
+
+            // Camera Setup
+            APP.Camera = new THREE.PerspectiveCamera( 45, APP.Aspect, 0.00001, 10000 );
+            APP.Camera.position.set( 0, 0, 0.00000001 );
+            // APP.Camera.up.set(0, 0, 1);
+            // APP.Camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000 );
+
+            // Controls Setup
+            APP.Controls = new THREE.TrackballControls( APP.Camera, APP.Renderer.domElement );
+
+            // Loaders
+            APP.Loaders = {};
+            APP.Loaders.File = new THREE.FileLoader();
+            APP.Loaders.Texture = new THREE.TextureLoader();
+
+            // Parsers
+            APP.Parsers = {};
+
+            // Post-Processing Setup
+            APP.RenderPass = new THREE.RenderPass( APP.Scene, APP.Camera );
+
+			APP.BloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+			APP.BloomPass.threshold = 0.0;
+			APP.BloomPass.strength = 2.0;
+			APP.BloomPass.radius = 0.5;
+
+            // APP.Renderer.toneMappingExposure = Math.pow( 2.0, 4.0 );
+
+			APP.Composer = new THREE.EffectComposer( APP.Renderer );
+			APP.Composer.addPass( APP.RenderPass );
+			APP.Composer.addPass( APP.BloomPass );
+
+            // Window Resize Handler
+            window.addEventListener( 'resize', function () {
+
+				APP.Camera.aspect = window.innerWidth / window.innerHeight;
+				APP.Camera.updateProjectionMatrix();
+
+				APP.Renderer.setSize( window.innerWidth, window.innerHeight );
+                APP.Composer.setSize( width, height );
+
+                APP.Controls.handleResize();
+
+			}, false );
+
+            // Input Event Handlers
+            APP.Canvas.addEventListener( 'mousedown', function() { console.log("A"); } );
+
+            // Loop Definitions
+
+            APP.UpdateLoop = function() {
+
+                APP.Controls.update();
+
+                // APP.Stars.updateTime( APP.Stars.time + 1 );
+
+                // APP.UpdateConstellations();
+
+                // APP.Camera.lookAt( new THREE.Vector3().clone( APP.Camera.position ).add( APP.Camera.position ) );
+
+            };
+
+            APP.RenderLoop = function() {
+
+                APP.Composer.render();
+                // APP.Renderer.render( APP.Scene, APP.Camera );
+
+            };
+
+            APP.MainLoop = function() {
+
+            	requestAnimationFrame( APP.MainLoop );
+
+            	APP.UpdateLoop();
+            	APP.RenderLoop();
+
+            }
+
+            APP.Start = function() {
+
+                APP.DrawConstellations();
+
+                APP.MainLoop();
+
+            }
+
+            /**
+             *  Main Logic
+             */
+
+            APP.CelestialSphere = function() {
+
+                this.geometry = new THREE.SphereGeometry( 100000, 32, 32 );
+
+                this.material = new THREE.MeshBasicMaterial();
+                this.material.map = APP.Loaders.Texture.load('MilkyWay.jpg');
+                this.material.side = THREE.BackSide;
+
+                this.mesh = new THREE.Mesh( this.geometry, this.material );
+
+                // APP.Scene.add( this.mesh );
+
+            }
+
+            APP.Data = function() {
+
+                var promise = new Promise(resolve => {
+
+                    APP.Loaders.File.load("hygdata.json",resolve);
+
+                });
+
+                return Promise.all( [ promise ] ).then( data => {
+
+                    console.log("Data File Loaded");
+
+                    APP.Stars.create( JSON.parse( data ) );
+
+                });
+
+            }()
+
+            APP.getStarByHIP = function( HIP ) {
+
+                for( var i = 0; i < APP.Data.length; i++ ) {
+
+                    if( APP.Data[i].hip == HIP ) { return APP.Data[i]; }
+
+                }
+
+            }
+
+            APP.getStarByID = function( ID ) {
+
+                for( var i = 0; i < APP.Data.length; i++ ) {
+
+                    if( APP.Data[i].id == ID ) { return APP.Data[i]; }
+
+                }
+
+            }
+
+            APP.Stars = new function() {
+
+                this.geometry = new THREE.BufferGeometry();
+
+                this.material = new THREE.ShaderMaterial( {
+
+					uniforms: {
+						color: { value: new THREE.Color( 0xFFFFFF ) },
+                        atmosphere: { value: false },
+                        colorStars: { value: false },
+					},
+					vertexShader: document.getElementById( 'vertexshader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentshader' ).textContent
+
+				} );
+
+                this.material.transparent = true;
+                this.material.depthWrite = false;
+
+                this.particles = new THREE.Points( this.geometry, this.material );
+                this.particles.frustumCulled = false;
+
+                APP.Scene.add( this.particles );
+
+                this.time = 0;
+
+                this.positions = new Float32Array( 0 );
+                this.magnitudes = new Float32Array( 0 );
+
+                this.temperature = new Float32Array( 0 );
+                this.wavelength = new Float32Array( 0 );
+                this.colors = new Float32Array( 0 );
+
+                this.updateTime = function( time ) {
+
+                    this.time = time;
+
+                    for( var i = 0; i < APP.Data.length; i++ ) {
+
+                        this.positions[ i * 3 + 0 ] = APP.Data[ i ].x + APP.Data[i].vx * this.time;
+                        this.positions[ i * 3 + 1 ] = APP.Data[ i ].y + APP.Data[i].vy * this.time;
+                        this.positions[ i * 3 + 2 ] = APP.Data[ i ].z + APP.Data[i].vz * this.time;
+
+                    }
+
+                    this.geometry.attributes.position.needsUpdate = true;
+
+                }
+
+                this.create = function( data ) {
+
+                    APP.Data = data;
+
+                    this.positions = new Float32Array( data.length * 3 );
+                    this.velocities = new Float32Array( data.length * 3 );
+                    this.magnitudes = new Float32Array( data.length );
+
+                    this.temperature = new Float32Array( data.length );
+                    this.wavelength = new Float32Array( data.length );
+
+                    this.colors = new Float32Array( data.length * 3 );
+
+                    for( var i = 0; i < data.length; i++ ) {
+
+                        this.positions[ i * 3 + 0 ] = data[ i ].x;
+                        this.positions[ i * 3 + 1 ] = data[ i ].y;
+                        this.positions[ i * 3 + 2 ] = data[ i ].z;
+
+                        this.magnitudes[ i ] = data[ i ].mag;
+
+                        this.temperature[ i ] = 4600 * ( ( 1 / ( 0.92 * data[ i ].ci + 1.7 ) ) + ( 1 / ( 0.92 * data[ i ].ci + 0.62 ) ) );
+
+                        this.wavelength[ i ] = 2898000 / this.temperature[ i ];
+
+                        var color = nmToRGB( this.wavelength[ i ] );
+
+                        this.colors[ i * 3 + 0 ] = color[ 0 ];
+                        this.colors[ i * 3 + 1 ] = color[ 1 ];
+                        this.colors[ i * 3 + 2 ] = color[ 2 ];
+
+                    }
+
+                    this.magnitudes[ 0 ] = 0.0;
+
+                    // APP.Camera.position.setX( this.positions[ 0 ] );
+                    // APP.Camera.target.setX( this.positions[ 0 ] );
+
+                    this.geometry.setAttribute( 'position', new THREE.BufferAttribute( this.positions, 3 ) );
+                    this.geometry.setAttribute( 'magnitude', new THREE.BufferAttribute( this.magnitudes, 1 ) );
+                    this.geometry.setAttribute( 'color', new THREE.BufferAttribute( this.colors, 3 ) );
+
+                    /**
+                     *  !!! Application Start !!!
+                     */
+                        APP.Start();
+                    /**
+                     *  !!! Application Start !!!
+                     */
+
+                }
+
+            }
+
+            function nmToRGB( wavelength ) {
+                var Gamma = 0.80,
+                IntensityMax = 255,
+                factor, red, green, blue;
+                if((wavelength >= 380) && (wavelength<440)){
+                    red = -(wavelength - 440) / (440 - 380);
+                    green = 0.0;
+                    blue = 1.0;
+                }
+                else if((wavelength >= 440) && (wavelength<490)){
+                    red = 0.0;
+                    green = (wavelength - 440) / (490 - 440);
+                    blue = 1.0;
+                }
+                else if((wavelength >= 490) && (wavelength<510)){
+                    red = 0.0;
+                    green = 1.0;
+                    blue = -(wavelength - 510) / (510 - 490);
+                }
+                else if((wavelength >= 510) && (wavelength<580)){
+                    red = (wavelength - 510) / (580 - 510);
+                    green = 1.0;
+                    blue = 0.0;
+                }
+                else if((wavelength >= 580) && (wavelength<645)){
+                    red = 1.0;
+                    green = -(wavelength - 645) / (645 - 580);
+                    blue = 0.0;
+                }
+                else if((wavelength >= 645) && (wavelength<781)){
+                    red = 1.0;
+                    green = 0.0;
+                    blue = 0.0;
+                }
+                else{
+                    red = 0.0;
+                    green = 0.0;
+                    blue = 0.0;
+                };
+
+                // Let the intensity fall off near the vision limits
+                if((wavelength >= 380) && (wavelength<420)){
+                    factor = 0.3 + 0.7*(wavelength - 380) / (420 - 380);
+                }
+                else if((wavelength >= 420) && (wavelength<701)){
+                    factor = 1.0;
+                }
+                else if((wavelength >= 701) && (wavelength<781)){
+                    factor = 0.3 + 0.7*(780 - wavelength) / (780 - 700);
+                }
+                else{
+                    factor = 0.0;
+                };
+
+                if (red !== 0){
+                    red = Math.round(IntensityMax * Math.pow(red * factor, Gamma));
+                }
+                if (green !== 0){
+                    green = Math.round(IntensityMax * Math.pow(green * factor, Gamma));
+                }
+                if (blue !== 0){
+                    blue = Math.round(IntensityMax * Math.pow(blue * factor, Gamma));
+                }
+                return [red,green,blue];
+
+            }
+
+
+        </script>
+
+        <!-- Constellation Data -->
+
+        <script>
+
+            var Constellation = function( name, stars ) {
+
+                this.name = name || "Undefined";
+
+                this.stars = stars || []; // Using HIP
+
+                this.positions = new Float32Array( this.stars.length * 3 );
+                this.colors = []; // new Float32Array( ( this.connections.length + 1 ) * 3 );
+
+                this.material = new THREE.LineBasicMaterial( { color: 0x88FFFF } );
+                this.geometry = new THREE.BufferGeometry();
+                this.mesh = null;
+
+                this.display = function() {
+
+                    for( var i = 0; i < this.stars.length; i++ ) {
+
+                        star = APP.getStarByHIP( this.stars[ i ] );
+
+                        this.positions[ i * 3 + 0 ] = APP.Stars.positions[ star.id * 3 + 0 ]
+                        this.positions[ i * 3 + 1 ] = APP.Stars.positions[ star.id * 3 + 1 ]
+                        this.positions[ i * 3 + 2 ] = APP.Stars.positions[ star.id * 3 + 2 ]
+
+                    }
+
+                    this.geometry.setAttribute( "position", new THREE.BufferAttribute( this.positions, 3 ) );
+				    this.geometry.computeBoundingSphere();
+
+                    this.mesh = new THREE.Line( this.geometry, this.material );
+                    this.mesh.visible = false;
+
+                    APP.Scene.add( this.mesh );
+
+                }
+
+                this.updatePositions = function( time = APP.Stars.time ) {
+
+                    for( var i = 0; i < this.stars.length; i++ ) {
+
+                        star = APP.getStarByHIP( this.stars[ i ] );
+
+                        this.positions[ i * 3 + 0 ] = APP.Stars.positions[ star.id * 3 + 0 ]
+                        this.positions[ i * 3 + 1 ] = APP.Stars.positions[ star.id * 3 + 1 ]
+                        this.positions[ i * 3 + 2 ] = APP.Stars.positions[ star.id * 3 + 2 ]
+
+                    }
+
+                    this.geometry.attributes.position.needsUpdate = true;
+
+                }
+
+            }
+
+            APP.Constellations = [
+
+                new Constellation(
+                    "Ursa Minor",
+                    [
+                        11767,
+                        85822,
+                        82080,
+                        77055,
+                        72607,
+                        75097,
+                        79822,
+                        77055,
+                    ]
+                ),
+
+                new Constellation(
+                    "Ursa Major",
+                    [
+                        67301,
+                        65378,
+                        62956,
+                        59774,
+                        54061,
+                        53910,
+                        58001,
+                        59774
+                    ]
+                ),
+
+                new Constellation(
+                    "Hercules",
+                    [
+                        88794,
+                        87933,
+                        86974,
+                        85693,
+                        84379,
+                        85693,
+
+                        83207,
+                        81693,
+                        80816,
+                        80170,
+                        80816,
+                        81693,
+
+                        81833,
+                        81126,
+                        79992,
+                        79101,
+                        77760,
+                        79101,
+                        79992,
+                        81126,
+                        81833,
+
+                        84380,
+                        84606,
+                        85112,
+                        87808,
+                        86414,
+                        87808,
+                        85112,
+                        84606,
+                        84380,
+                        83207
+                    ]
+                ),
+
+                new Constellation(
+                    "Orion",
+                    [
+                        23123,
+                        22730,
+                        22549,
+                        22449,
+                        22509,
+                        22845,
+                        22509,
+                        22449,
+
+                        25336,
+                        25930,
+                        24436,
+                        27366,
+                        26727,
+                        26311,
+                        25930,
+                        26311,
+                        26727,
+
+                        27989,
+                        28614,
+                        29426,
+                        29434,
+                        28716,
+                        27913,
+                        29038,
+                        29426,
+                        29038,
+                        28614,
+                        27989,
+
+                        26207,
+                        25336
+                    ]
+                ),
+
+                new Constellation(
+                    "Hydra",
+                    [
+                        64962,
+                        64166,
+                        57936,
+                        56343,
+                        52943,
+                        51069,
+                        49841,
+                        49402,
+                        48356,
+                        46390,
+                        46509,
+                        46776,
+                        45336,
+                        43813,
+                        43234,
+                        43109,
+                        42313,
+                        42402,
+                        42799,
+                        43234
+                    ]
+                ),
+
+                new Constellation(
+                    "Phoenix",
+                    [
+                        2072,
+                        2081,
+                        765,
+                        2072,
+                        5348,
+                        5165,
+                        2072,
+                        6867,
+                        5165,
+                        7083,
+                        8837,
+                        5165
+                    ]
+                ),
+
+                new Constellation(
+                    "Taurus",
+                    [
+                        25428,
+                        21881,
+                        20889,
+                        21421,
+                        26451,
+                        21421,
+                        20894,
+                        20205,
+                        18724,
+                        15900,
+                        18724,
+                        20205,
+                        20455,
+                        17847,
+                        20455,
+                        20648,
+                        20889
+                    ]
+                ),
+
+                new Constellation(
+                    "Scorpius",
+                    [
+                        85927,
+                        86670,
+                        87073,
+                        86228,
+                        84143,
+                        82671,
+                        82514,
+                        82396,
+                        81266,
+                        80763,
+
+                        78265,
+                        80763,
+
+                        78401,
+                        80763,
+
+                        78820
+
+                    ]
+                ),
+
+                new Constellation(
+                    "Cassiopeia",
+                    [
+                        8886,
+                        6686,
+                        4427,
+                        3179,
+                        746
+                    ]
+                )
+
+            ]
+
+            APP.UpdateConstellations = function() {
+
+                for( var i = 0; i < APP.Constellations.length; i++ ) {
+
+                    APP.Constellations[ i ].updatePositions( APP.Stars.time );
+
+                }
+
+            }
+
+            APP.DrawConstellations = function() {
+
+                for( var i = 0; i < APP.Constellations.length; i++ ) {
+
+                    APP.Constellations[ i ].display();
+
+                }
+
+            }
+
+            /**
+             *  Button Toggles
+             */
+
+            APP.ToggleConstellations = function() {
+
+                for( var i = 0; i < APP.Constellations.length; i++ ) {
+
+                    APP.Constellations[ i ].mesh.visible = !APP.Constellations[ i ].mesh.visible;
+
+                }
+
+            }
+
+            APP.ToggleStarColor = function() {
+
+                APP.Stars.material.uniforms.colorStars.value = !APP.Stars.material.uniforms.colorStars.value;
+
+            }
+
+            APP.ToggleAtmosphere = function() {
+
+                APP.Stars.material.uniforms.atmosphere.value = !APP.Stars.material.uniforms.atmosphere.value;
+
+            }
+
+            APP.ToggleSun = function() {
+
+                if( APP.Stars.magnitudes[ 0 ] == 0 ) APP.Stars.magnitudes[ 0 ] = 100;
+                else APP.Stars.magnitudes[ 0 ] = 0;
+                APP.Stars.geometry.attributes.magnitude.needsUpdate = true;
+
+            }
+
+            APP.UpdateTime = function( input ) {
+
+                APP.Stars.updateTime( input.children[0].value );
+
+                APP.UpdateConstellations();
+
+            }
+
+        </script>
+
+    </body>
 
 </html>
